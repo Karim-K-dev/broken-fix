@@ -145,6 +145,7 @@ namespace BrokenCode
             return result;
         }
 
+        // TODO: Get _licenseServiceProvider from DI.
         private void Configure(LicenseServiceSettings settings)
         {
             if (settings != null)
