@@ -59,36 +59,40 @@ namespace BrokenCode
             }
         }
 
-        private async Task<IActionResult> GetReportAsync(GetReportRequest request)
+        // TODO: Split this big method.
+        private async Task<IActionResult> GetReportAsync(GetReportRequest request, CancellationToken token)
         {
-            var filteredUsers = _db.Users.Where(d => d.DomainId == request.DomainId).Where(b => InBackup(b)).OrderBy(o => o.UserEmail).Cast<User>();
+            var filteredUsers = _db.Users
+                .Where(u => InBackup(u) && u.DomainId == request.DomainId);
 
-            int totalCount = filteredUsers != null ? filteredUsers.Count() : 0;
-            filteredUsers = filteredUsers.Take(request.PageSize).Skip(request.PageSize * request.PageNumber);
+            var totalCount = await filteredUsers.CountAsync();
+            
+            var usersOnPage = filteredUsers.Take(request.PageSize).Skip(request.PageSize * request.PageNumber);
 
-            Dictionary<Guid, LicenseInfo> userLicenses = new Dictionary<Guid, LicenseInfo>();
+            var userLicenses = new Dictionary<Guid, LicenseInfo>();
             using var licenseService = GetLicenseServiceAndConfigure();
 
             if (licenseService != null)
             {
-                Log.Info($"Total licenses for domain '{request.DomainId}': {licenseService.GetLicensedUserCountAsync(request.DomainId)}");
+                Log.Info(
+                    $"Total licenses for domain '{request.DomainId}': {licenseService.GetLicensedUserCountAsync(request.DomainId)}");
 
-                List<string> emails = filteredUsers.Select(u => u.UserEmail).ToList();
+                var emails = await usersOnPage.Select(u => u.UserEmail).ToListAsync();
                 ICollection<LicenseInfo> result = null;
 
                 try
                 {
-                    result = licenseService.GetLicensesAsync(request.DomainId, emails).GetAwaiter().GetResult();
+                    result = await licenseService.GetLicensesAsync(request.DomainId, emails);
                 }
                 catch (Exception ex)
                 {
                     Log.Error($"Problem of getting licenses information: {ex.Message}");
-                    throw ex;
+                    throw;
                 }
 
                 if (result != null)
                 {
-                    foreach (User user in filteredUsers)
+                    foreach (User user in usersOnPage)
                     {
                         if (result.Count(r => r.Email == user.UserEmail) > 0)
                         {
@@ -98,10 +102,12 @@ namespace BrokenCode
                 }
             }
 
-            var usersData = (await filteredUsers.ToListAsync())
+            var usersData = (await usersOnPage.ToListAsync())
                 .Select(u =>
                 {
-                    string licenseType = userLicenses.ContainsKey(u.Id) ? (userLicenses[u.Id].IsTrial ? "Trial" : "Paid") : "None";
+                    string licenseType = userLicenses.ContainsKey(u.Id)
+                        ? (userLicenses[u.Id].IsTrial ? "Trial" : "Paid") // Move to constants.
+                        : "None";
 
                     return new UserStatistics
                     {
