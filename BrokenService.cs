@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,9 +15,11 @@ namespace BrokenCode
 {
     public class BrokenService
     {
+        private const int GetReportTimeOut = 10 * 60;
+
+        // TODO: Insert to DI container.
         private readonly UserDbContext _db;
         private readonly ILicenseServiceProvider _licenseServiceProvider;
-        private int _counter;
 
         private static readonly ILog Log = LogManager.GetLogger(typeof(BrokenService));
 
@@ -28,33 +31,31 @@ namespace BrokenCode
 
         public async Task<IActionResult> GetReport(GetReportRequest request)
         {
-            bool acquiredLock = false;
+            CancellationTokenSource cancelTokenSource = new CancellationTokenSource();
+            CancellationToken token = cancelTokenSource.Token;
+            
+            var taskTimeOutObserver = new Task(() =>
+            {
+                Thread.Sleep(GetReportTimeOut);
+                cancelTokenSource.Cancel();
+            });
+            
+            var stopWatch = new Stopwatch();
             try
             {
-                Monitor.Enter(_counter, ref acquiredLock);
-
-                while (true)
-                {
-                    try
-                    {
-                        if (_counter > 10)
-                            return new StatusCodeResult(500);
-
-                        return await GetReportAsync(request);
-                    }
-                    catch
-                    {
-                        Log.Debug($"Attempt {_counter} failed");
-                        _counter++;
-
-                        Thread.Sleep(1000);
-                    }
-                }
+                stopWatch.Start();
+                taskTimeOutObserver.Start();
+                
+                return await GetReportAsync(request, token);
+            }
+            catch
+            {
+                Log.Debug($"Attempt {stopWatch.Elapsed} failed");
+                return new StatusCodeResult(500);
             }
             finally
             {
-                if (acquiredLock)
-                    Monitor.Exit(_counter);
+                cancelTokenSource.Dispose();
             }
         }
 
