@@ -18,6 +18,14 @@ namespace BrokenCode
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
+
+            TryCreateUserDbIfNotExist();
+        }
+
+        private bool TryCreateUserDbIfNotExist()
+        {
+            using var client = new UserDbContext();
+            return client.Database.EnsureCreated();
         }
         
         // This method gets called by the runtime. Use this method to add services to the container.
@@ -25,6 +33,9 @@ namespace BrokenCode
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllersWithViews();
+
+            services.AddEntityFrameworkSqlite();
+            services.AddDbContext<UserDbContext>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

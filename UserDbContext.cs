@@ -8,6 +8,7 @@ namespace BrokenCode
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             optionsBuilder.UseLazyLoadingProxies();
+            optionsBuilder.UseSqlite("Filename=UserDatabase.db");
         }
 
         protected override void OnModelCreating(ModelBuilder mb)
