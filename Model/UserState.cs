@@ -1,6 +1,6 @@
 ﻿namespace BrokenCode.Model
 {
-    public enum UserState : byte
+    public enum UserState
 	{
 		InDomain = 0,
 		NotInDomain = 1,
