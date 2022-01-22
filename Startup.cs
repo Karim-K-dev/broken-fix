@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using BrokenCode.Interfaces;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -36,6 +37,11 @@ namespace BrokenCode
 
             services.AddEntityFrameworkSqlite();
             services.AddDbContext<UserDbContext>();
+
+            services.AddScoped<IBrokenService, BrokenService>();
+
+            services.AddSingleton<ILicenseService, LicenseService>();
+            services.AddSingleton<ILicenseServiceProvider, LicenseServiceProvider>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

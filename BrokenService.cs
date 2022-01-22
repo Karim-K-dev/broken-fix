@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BrokenCode
 {
-    public class BrokenService
+    public class BrokenService : IBrokenService
     {
         private readonly UserDbContext _db;
         private readonly ILicenseServiceProvider _licenseServiceProvider;
@@ -58,7 +58,7 @@ namespace BrokenCode
             }
         }
 
-        private async Task<IActionResult> GetReportAsync(GetReportRequest request)
+        public async Task<IActionResult> GetReportAsync(GetReportRequest request)
         {
             var filteredUsers = _db.Users.Where(d => d.DomainId == request.DomainId).Where(b => InBackup(b)).OrderBy(o => o.UserEmail).Cast<User>();
 
@@ -124,12 +124,12 @@ namespace BrokenCode
             });
         }
 
-        private bool InBackup(User user)
+        public bool InBackup(User user)
         {
             return user.BackupEnabled && user.State == UserState.InDomain;
         }
 
-        private ILicenseService GetLicenseServiceAndConfigure()
+        public ILicenseService GetLicenseServiceAndConfigure()
         {
             using var result = _licenseServiceProvider.GetLicenseService();
 
