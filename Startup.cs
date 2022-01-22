@@ -45,8 +45,7 @@ namespace BrokenCode
             {
                 app.UseDeveloperExceptionPage();
             }
-
-            app.UseHttpsRedirection();
+            
             app.UseStaticFiles();
             
             app.UseRouting();
