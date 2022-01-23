@@ -1,14 +1,26 @@
 ﻿using BrokenCode.Model;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace BrokenCode
 {
     public class UserDbContext : DbContext
     {
+        private readonly string _fileNameDb;
+        
+        public UserDbContext(IConfiguration configuration)
+        {
+            _fileNameDb = configuration
+                .GetSection("UserDatabase")
+                .GetSection("SqlLiteFileName").Value;
+
+            Database.EnsureCreated();
+        }
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             optionsBuilder.UseLazyLoadingProxies();
-            optionsBuilder.UseSqlite("Filename=UserDatabase.db");
+            optionsBuilder.UseSqlite($"Filename={_fileNameDb}");
         }
 
         protected override void OnModelCreating(ModelBuilder mb)
