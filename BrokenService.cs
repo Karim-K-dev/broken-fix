@@ -65,8 +65,6 @@ namespace BrokenCode
             var filteredUsers = _db.Users
                 .Where(u => InBackup(u) && u.DomainId == request.DomainId);
 
-            var totalCount = await filteredUsers.CountAsync();
-            
             var usersOnPage = filteredUsers.Take(request.PageSize).Skip(request.PageSize * request.PageNumber);
 
             var userLicenses = new Dictionary<Guid, LicenseInfo>();
@@ -124,11 +122,22 @@ namespace BrokenCode
                     };
                 });
 
+            var totalCountUsersHaveBackups = await GetTotalUsersHaveBackupsInDomain(request.DomainId);
             return new OkObjectResult(new
             {
-                TotalCount = totalCount,
+                TotalCount = totalCountUsersHaveBackups,
                 Data = usersData
             });
+        }
+
+        public async Task<int> GetTotalUsersHaveBackupsInDomain(Guid domainId)
+        {
+            return await _db.Users.CountAsync(u => HaveBackupInDomain(u, domainId));
+        }
+
+        public bool HaveBackupInDomain(User user, Guid domainId)
+        {
+            return user.DomainId == domainId && InBackup(user);
         }
 
         public bool InBackup(User user)
