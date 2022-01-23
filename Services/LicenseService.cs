@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using BrokenCode.Etc;
 using BrokenCode.Model;
 using log4net;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
 namespace BrokenCode.Interfaces
@@ -17,9 +19,13 @@ namespace BrokenCode.Interfaces
 
         private static readonly ILog Log = LogManager.GetLogger(typeof(LicenseService));
 
-        public LicenseService(IOptions<LicenseServiceSettings> licenseServiceSettingsOptions)
+        private readonly UserDbContext _userDbContext;
+
+        public LicenseService(IOptions<LicenseServiceSettings> licenseServiceSettingsOptions,
+            UserDbContext userDbContext)
         {
             Settings = licenseServiceSettingsOptions.Value;
+            _userDbContext = userDbContext;
         }
 
         public LicenseType GetLicenseTypeForUser(Guid userId)
@@ -30,8 +36,20 @@ namespace BrokenCode.Interfaces
 
         public async Task<int> GetLicensedUserCountAsync(Guid domainId)
         {
-            // TODO: Select  domainId only.
-            return LicensesInfoByUser.Count;
+            var countLicensedUsersInDomain = 0;
+
+            var users = _userDbContext.Users
+                .Where(u => u.DomainId == domainId).AsAsyncEnumerable();
+
+            await foreach (var user in users)
+            {
+                if (_licensesInfoByUser.ContainsKey(user.Id))
+                {
+                    countLicensedUsersInDomain++;
+                }
+            }
+
+            return countLicensedUsersInDomain;
         }
 
         public async Task LogTotalLicensesCountForDomain(Guid domainId)
