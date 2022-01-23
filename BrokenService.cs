@@ -62,10 +62,7 @@ namespace BrokenCode
         // TODO: Split this big method.
         public async Task<IActionResult> GetReportAsync(GetReportRequest request)
         {
-            var filteredUsers = _db.Users
-                .Where(u => InBackup(u) && u.DomainId == request.DomainId);
-
-            var usersOnPage = filteredUsers.Take(request.PageSize).Skip(request.PageSize * request.PageNumber);
+            var usersOnPage = await GetUsersHaveBackupsInDomain(request.DomainId, request.PageNumber, request.PageSize);
 
             var userLicenses = new Dictionary<Guid, LicenseInfo>();
             using var licenseService = GetLicenseServiceAndConfigure();
@@ -128,6 +125,16 @@ namespace BrokenCode
                 TotalCount = totalCountUsersHaveBackups,
                 Data = usersData
             });
+        }
+
+        public async Task<List<User>> GetUsersHaveBackupsInDomain(Guid domainId, int pageNumber = 0, int pageSize = 10)
+        {
+            var request = _db.Users
+                .Where(u => HaveBackupInDomain(u, domainId)) // Filter users by request.
+                .Skip(pageSize * pageNumber) // Skip users at first.
+                .Take(pageSize);
+
+            return await request.ToListAsync();
         }
 
         public async Task<int> GetTotalUsersHaveBackupsInDomain(Guid domainId)
