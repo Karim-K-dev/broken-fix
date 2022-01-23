@@ -13,6 +13,11 @@ namespace BrokenCode.Controllers
         {
             _brokenService = brokenService;
         }
+
+        public IActionResult Index()
+        {
+            return View();
+        }
         
         [HttpGet]
         public async Task<IActionResult> GetReport(GetReportRequest reportRequest)

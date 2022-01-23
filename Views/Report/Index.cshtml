@@ -1,0 +1,28 @@
+@using BrokenCode.Etc
+@model object
+
+@{
+    ViewBag.Title = "title";
+    Layout = "_Layout";
+}
+
+<h2>Input report parameters</h2>
+<label>You can press 'Show Report' button with empty additional fields</label>
+<div>
+    <form asp-controller="Report" asp-action="GetReport" method="get">
+        <button type="submit" class="btn btn-primary">Show Report</button>
+
+        <div>
+            <label>@nameof(GetReportRequest.DomainId)</label>
+            <input type="text" name="@nameof(GetReportRequest.DomainId)"/>
+        </div>
+        <div>
+            <label>@nameof(GetReportRequest.PageNumber)</label>
+            <input type="text" name="@nameof(GetReportRequest.PageNumber)"/>
+        </div>
+        <div>
+            <label>@nameof(GetReportRequest.PageSize)</label>
+            <input type="text" name="@nameof(GetReportRequest.PageSize)"/>
+        </div>
+    </form>
+</div>
