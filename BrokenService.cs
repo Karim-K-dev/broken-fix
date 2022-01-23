@@ -96,7 +96,7 @@ namespace BrokenCode
         public async Task<List<User>> GetUsersHaveBackupsInDomain(Guid domainId, int pageNumber = 0, int pageSize = 10)
         {
             var request = _db.Users
-                .Where(u => HaveBackupInDomain(u, domainId)) // Filter users by request.
+                .Where(u => u.DomainId == domainId && u.BackupEnabled && u.State == UserState.InDomain) // Filter users by request.
                 .Skip(pageSize * pageNumber) // Skip users at first.
                 .Take(pageSize);
 
@@ -105,19 +105,10 @@ namespace BrokenCode
 
         public async Task<int> GetTotalUsersHaveBackupsInDomain(Guid domainId)
         {
-            return await _db.Users.CountAsync(u => HaveBackupInDomain(u, domainId));
+            return await _db.Users.CountAsync(u =>
+                u.DomainId == domainId && u.BackupEnabled && u.State == UserState.InDomain);
         }
-
-        public bool HaveBackupInDomain(User user, Guid domainId)
-        {
-            return user.DomainId == domainId && InBackup(user);
-        }
-
-        public bool InBackup(User user)
-        {
-            return user.BackupEnabled && user.State == UserState.InDomain;
-        }
-
+        
         // TODO: Get _licenseServiceProvider from DI.
         private void Configure(LicenseServiceSettings settings)
         {
