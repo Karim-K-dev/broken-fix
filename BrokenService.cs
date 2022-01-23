@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,9 +15,11 @@ namespace BrokenCode
 {
     public class BrokenService : IBrokenService
     {
+        private const int GetReportTimeOut = 10 * 60;
+
+        // TODO: Insert to DI container.
         private readonly UserDbContext _db;
         private readonly ILicenseServiceProvider _licenseServiceProvider;
-        private int _counter;
 
         private static readonly ILog Log = LogManager.GetLogger(typeof(BrokenService));
 
@@ -28,66 +31,68 @@ namespace BrokenCode
 
         public async Task<IActionResult> GetReport(GetReportRequest request)
         {
-            bool acquiredLock = false;
+            CancellationTokenSource cancelTokenSource = new CancellationTokenSource();
+            CancellationToken token = cancelTokenSource.Token;
+            
+            var taskTimeOutObserver = new Task(() =>
+            {
+                Thread.Sleep(GetReportTimeOut);
+                cancelTokenSource.Cancel();
+            });
+            
+            var stopWatch = new Stopwatch();
             try
             {
-                Monitor.Enter(_counter, ref acquiredLock);
-
-                while (true)
-                {
-                    try
-                    {
-                        if (_counter > 10)
-                            return new StatusCodeResult(500);
-
-                        return await GetReportAsync(request);
-                    }
-                    catch
-                    {
-                        Log.Debug($"Attempt {_counter} failed");
-                        _counter++;
-
-                        Thread.Sleep(1000);
-                    }
-                }
+                stopWatch.Start();
+                taskTimeOutObserver.Start();
+                
+                return await GetReportAsync(request, token);
+            }
+            catch
+            {
+                Log.Debug($"Attempt {stopWatch.Elapsed} failed");
+                return new StatusCodeResult(500);
             }
             finally
             {
-                if (acquiredLock)
-                    Monitor.Exit(_counter);
+                cancelTokenSource.Dispose();
             }
         }
 
-        public async Task<IActionResult> GetReportAsync(GetReportRequest request)
+        // TODO: Split this big method.
+        private async Task<IActionResult> GetReportAsync(GetReportRequest request, CancellationToken token)
         {
-            var filteredUsers = _db.Users.Where(d => d.DomainId == request.DomainId).Where(b => InBackup(b)).OrderBy(o => o.UserEmail).Cast<User>();
+            var filteredUsers = _db.Users
+                .Where(u => InBackup(u) && u.DomainId == request.DomainId);
 
-            int totalCount = filteredUsers != null ? filteredUsers.Count() : 0;
-            filteredUsers = filteredUsers.Take(request.PageSize).Skip(request.PageSize * request.PageNumber);
+            var totalCount = await filteredUsers.CountAsync();
+            
+            var usersOnPage = filteredUsers.Take(request.PageSize).Skip(request.PageSize * request.PageNumber);
 
-            Dictionary<Guid, LicenseInfo> userLicenses = new Dictionary<Guid, LicenseInfo>();
+            var userLicenses = new Dictionary<Guid, LicenseInfo>();
             using var licenseService = GetLicenseServiceAndConfigure();
 
             if (licenseService != null)
             {
-                Log.Info($"Total licenses for domain '{request.DomainId}': {licenseService.GetLicensedUserCountAsync(request.DomainId)}");
+                Log.Info(
+                    $"Total licenses for domain '{request.DomainId}': {licenseService.GetLicensedUserCountAsync(request.DomainId)}");
 
-                List<string> emails = filteredUsers.Select(u => u.UserEmail).ToList();
+                var emails = await usersOnPage.Select(u => u.UserEmail).ToListAsync();
                 ICollection<LicenseInfo> result = null;
 
                 try
                 {
-                    result = licenseService.GetLicensesAsync(request.DomainId, emails).GetAwaiter().GetResult();
+                    result = await licenseService.GetLicensesAsync(request.DomainId, emails);
                 }
                 catch (Exception ex)
                 {
                     Log.Error($"Problem of getting licenses information: {ex.Message}");
-                    throw ex;
+                    throw;
                 }
 
                 if (result != null)
                 {
-                    foreach (User user in filteredUsers)
+                    foreach (User user in usersOnPage)
                     {
                         if (result.Count(r => r.Email == user.UserEmail) > 0)
                         {
@@ -97,10 +102,12 @@ namespace BrokenCode
                 }
             }
 
-            var usersData = (await filteredUsers.ToListAsync())
+            var usersData = (await usersOnPage.ToListAsync())
                 .Select(u =>
                 {
-                    string licenseType = userLicenses.ContainsKey(u.Id) ? (userLicenses[u.Id].IsTrial ? "Trial" : "Paid") : "None";
+                    string licenseType = userLicenses.ContainsKey(u.Id)
+                        ? (userLicenses[u.Id].IsTrial ? "Trial" : "Paid") // Move to constants.
+                        : "None";
 
                     return new UserStatistics
                     {
@@ -138,6 +145,7 @@ namespace BrokenCode
             return result;
         }
 
+        // TODO: Get _licenseServiceProvider from DI.
         private void Configure(LicenseServiceSettings settings)
         {
             if (settings != null)
