@@ -46,7 +46,7 @@ namespace BrokenCode
                 stopWatch.Start();
                 taskTimeOutObserver.Start();
                 
-                return await GetReportAsync(request, token);
+                return await GetReportAsync(request);
             }
             catch
             {
@@ -60,7 +60,7 @@ namespace BrokenCode
         }
 
         // TODO: Split this big method.
-        private async Task<IActionResult> GetReportAsync(GetReportRequest request, CancellationToken token)
+        public async Task<IActionResult> GetReportAsync(GetReportRequest request)
         {
             var filteredUsers = _db.Users
                 .Where(u => InBackup(u) && u.DomainId == request.DomainId);
