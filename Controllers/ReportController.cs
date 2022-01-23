@@ -7,9 +7,9 @@ namespace BrokenCode.Controllers
 {
     public class ReportController : Controller
     {
-        private readonly IBrokenService _brokenService;
+        private readonly IReportService _brokenService;
         
-        public ReportController(IBrokenService brokenService)
+        public ReportController(IReportService brokenService)
         {
             _brokenService = brokenService;
         }

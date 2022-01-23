@@ -14,16 +14,16 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BrokenCode
 {
-    public class BrokenService : IBrokenService
+    public class ReportService : IReportService
     {
         private const int GetReportTimeOut = 10 * 60;
         
         private readonly UserDbContext _db;
         private readonly ILicenseService _licenseService;
 
-        private static readonly ILog Log = LogManager.GetLogger(typeof(BrokenService));
+        private static readonly ILog Log = LogManager.GetLogger(typeof(ReportService));
 
-        public BrokenService(UserDbContext db, ILicenseService licenseService)
+        public ReportService(UserDbContext db, ILicenseService licenseService)
         {
             _db = db;
             _licenseService = licenseService;

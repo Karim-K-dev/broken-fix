@@ -28,7 +28,7 @@ namespace BrokenCode
             services.AddEntityFrameworkSqlite();
             services.AddDbContext<UserDbContext>();
 
-            services.AddScoped<IBrokenService, BrokenService>();
+            services.AddScoped<IReportService, ReportService>();
 
             services.AddScoped<ILicenseService, LicenseService>();
         }

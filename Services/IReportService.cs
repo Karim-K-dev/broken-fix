@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BrokenCode
 {
-    public interface IBrokenService
+    public interface IReportService
     {
         Task<IActionResult> GetReportAsync(GetReportRequest request);
     }
