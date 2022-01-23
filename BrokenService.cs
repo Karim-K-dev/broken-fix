@@ -75,15 +75,7 @@ namespace BrokenCode
                 var emails = usersOnPage.Select(u => u.UserEmail).ToList();
                 ICollection<LicenseInfo> result = null;
 
-                try
-                {
-                    result = await _licenseService.GetLicensesAsync(request.DomainId, emails);
-                }
-                catch (Exception ex)
-                {
-                    Log.Error($"Problem of getting licenses information: {ex.Message}");
-                    throw;
-                }
+                result = await _licenseService.GetLicensesAsync(request.DomainId, emails);
 
                 // получение лицензии для чего-то. Конец. Имеем result купленных когда-либо лицензий 
 
