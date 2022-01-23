@@ -31,24 +31,17 @@ namespace BrokenCode
 
         public async Task<IActionResult> GetReportAsync(GetReportRequest request)
         {
-            CancellationTokenSource cancelTokenSource = new CancellationTokenSource();
+            CancellationTokenSource cancelTokenSource = new CancellationTokenSource(GetReportTimeOut);
             CancellationToken token = cancelTokenSource.Token;
-
-            var taskTimeOutObserver = new Task(() =>
-            {
-                Thread.Sleep(GetReportTimeOut);
-                cancelTokenSource.Cancel();
-            });
 
             var stopWatch = new Stopwatch();
             try
             {
                 stopWatch.Start();
-                taskTimeOutObserver.Start();
 
                 return await GetReportInnerAsync(request, token);
             }
-            catch
+            catch(OperationCanceledException)
             {
                 Log.Debug($"Attempt {stopWatch.Elapsed} failed");
                 return new StatusCodeResult(500);
@@ -61,6 +54,8 @@ namespace BrokenCode
 
         private async Task<IActionResult> GetReportInnerAsync(GetReportRequest request, CancellationToken token)
         {
+            Thread.Sleep(10000);
+            
             var usersOnPage =
                 await _db.Users.HaveBackupsInDomainAsync(request.DomainId, request.PageNumber, request.PageSize);
 
