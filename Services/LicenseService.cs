@@ -2,14 +2,17 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using BrokenCode.Etc;
+using Microsoft.Extensions.Options;
 
 namespace BrokenCode.Interfaces
 {
     public class LicenseService : ILicenseService
     {
-        public void Dispose()
+        public LicenseServiceSettings Settings { get; }
+
+        public LicenseService(IOptions<LicenseServiceSettings> licenseServiceSettingsOptions)
         {
-            throw new NotImplementedException();
+            Settings = licenseServiceSettingsOptions.Value;
         }
 
         public Task<ICollection<LicenseInfo>> GetLicensesAsync(Guid domainId, ICollection<string> emails)
@@ -22,6 +25,9 @@ namespace BrokenCode.Interfaces
             throw new NotImplementedException();
         }
 
-        public LicenseServiceSettings Settings { get; set; }
+        public void Dispose()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

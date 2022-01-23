@@ -11,6 +11,6 @@ namespace BrokenCode.Interfaces
 
         Task<int> GetLicensedUserCountAsync(Guid domainId);
 
-        LicenseServiceSettings Settings { get; set; }
+        LicenseServiceSettings Settings { get; }
     }
 }
