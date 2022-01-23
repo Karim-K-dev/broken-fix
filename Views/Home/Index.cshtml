@@ -6,25 +6,11 @@
 
 <div class="text-center">
     <h1 class="display-4">Welcome</h1>
+    <a asp-controller="User" asp-action="Index">
+        <input type="button" class="btn btn-primary" value="Users"/>
+    </a>
+    <a asp-controller="Report" asp-action="Index">
+        <input type="button" class="btn btn-primary" value="Show Report"/>
+    </a>
     <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
-
-<div>
-    @* TODO: Use @model on other page for this request. *@
-    <form asp-controller="Report" asp-action="GetReport" method="get">
-        <div>
-            <label>@nameof(GetReportRequest.DomainId)</label>
-            <input type="text" name="@nameof(GetReportRequest.DomainId)"/>
-        </div>
-        <div>
-            <label>@nameof(GetReportRequest.PageNumber)</label>
-            <input type="text" name="@nameof(GetReportRequest.PageNumber)"/>
-        </div>
-        <div>
-            <label>@nameof(GetReportRequest.PageSize)</label>
-            <input type="text" name="@nameof(GetReportRequest.PageSize)"/>
-        </div>
-
-        <button type="submit" class="btn btn-primary">Show Report</button>
-    </form>
 </div>

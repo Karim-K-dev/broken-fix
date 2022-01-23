@@ -85,12 +85,12 @@ namespace BrokenCode
                         Id = u.Id,
                         UserName = u.UserEmail,
                         InBackup = u.BackupEnabled,
-                        EmailLastBackupStatus = u.Email.LastBackupStatus,
-                        EmailLastBackupDate = u.Email.LastBackupDate,
-                        DriveLastBackupStatus = u.Drive.LastBackupStatus,
-                        DriveLastBackupDate = u.Drive.LastBackupDate,
-                        CalendarLastBackupStatus = u.Calendar.LastBackupStatus,
-                        CalendarLastBackupDate = u.Calendar.LastBackupDate,
+                        EmailLastBackupStatus = u.Email?.LastBackupStatus,
+                        EmailLastBackupDate = u.Email?.LastBackupDate,
+                        DriveLastBackupStatus = u.Drive?.LastBackupStatus,
+                        DriveLastBackupDate = u.Drive?.LastBackupDate,
+                        CalendarLastBackupStatus = u.Calendar?.LastBackupStatus,
+                        CalendarLastBackupDate = u.Calendar?.LastBackupDate,
                         LicenseType = _licenseService.GetLicenseTypeForUser(u.Id).ToString()
                     };
                 });
