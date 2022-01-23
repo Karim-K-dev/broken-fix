@@ -39,8 +39,7 @@ namespace BrokenCode
 
             services.AddScoped<IBrokenService, BrokenService>();
 
-            services.AddSingleton<ILicenseService, LicenseService>();
-            services.AddSingleton<ILicenseServiceProvider, LicenseServiceProvider>();
+            services.AddScoped<ILicenseService, LicenseService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
