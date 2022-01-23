@@ -8,10 +8,11 @@ namespace BrokenCode.Interfaces
 {
     public interface ILicenseService : IDisposable
     {
-        Task<int> GetLicensedUserCountAsync(Guid domainId);
-
         LicenseServiceSettings Settings { get; }
+        IReadOnlyDictionary<Guid, LicenseInfo> LicensesInfoByUser { get; }
+        
+        Task<int> GetLicensedUserCountAsync(Guid domainId);
+        
         Task LogTotalLicensesCountForDomain(Guid domainId);
-        Task<IDictionary<Guid, LicenseInfo>> GetUserLicensesAsync(ICollection<User> users);
     }
 }

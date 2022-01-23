@@ -66,11 +66,8 @@ namespace BrokenCode
 
             // TODO: Can move to other request?
             await _licenseService.LogTotalLicensesCountForDomain(request.DomainId);
-            
-            var userLicenses = await _licenseService.GetUserLicensesAsync(usersOnPage);
 
-            // получаем тип лицензии для пользователя и все вставляем в польщовательскую статистику
-            // нужно упростить пользовательскую статистику
+            var userLicenses = _licenseService.LicensesInfoByUser;
             var usersData = (usersOnPage.ToList())
                 .Select(u =>
                 {
