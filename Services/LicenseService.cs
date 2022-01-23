@@ -20,6 +20,17 @@ namespace BrokenCode.Interfaces
         {
             Settings = licenseServiceSettingsOptions.Value;
         }
+        
+        public string GetLicenseTypeForUser(Guid userId)
+        {
+            var licenseInfo = _licensesInfoByUser.GetValueOrDefault(userId);
+            if (licenseInfo == null)
+            {
+                return "None";
+            }
+
+            return licenseInfo.IsTrial ? "Trial" : "Paid";
+        }
 
         public async Task<int> GetLicensedUserCountAsync(Guid domainId)
         {

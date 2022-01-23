@@ -66,15 +66,10 @@ namespace BrokenCode
 
             // TODO: Can move to other request?
             await _licenseService.LogTotalLicensesCountForDomain(request.DomainId);
-
-            var userLicenses = _licenseService.LicensesInfoByUser;
+            
             var usersData = (usersOnPage.ToList())
                 .Select(u =>
                 {
-                    string licenseType = userLicenses.ContainsKey(u.Id)
-                        ? (userLicenses[u.Id].IsTrial ? "Trial" : "Paid") // Move to constants.
-                        : "None";
-
                     return new UserStatistics
                     {
                         Id = u.Id,
@@ -86,7 +81,7 @@ namespace BrokenCode
                         DriveLastBackupDate = u.Drive.LastBackupDate,
                         CalendarLastBackupStatus = u.Calendar.LastBackupStatus,
                         CalendarLastBackupDate = u.Calendar.LastBackupDate,
-                        LicenseType = licenseType
+                        LicenseType = _licenseService.GetLicenseTypeForUser(u.Id)
                     };
                 });
 
