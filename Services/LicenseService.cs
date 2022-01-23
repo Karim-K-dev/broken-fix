@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using BrokenCode.Etc;
+using BrokenCode.Model;
 using log4net;
 using Microsoft.Extensions.Options;
 
@@ -20,16 +21,11 @@ namespace BrokenCode.Interfaces
         {
             Settings = licenseServiceSettingsOptions.Value;
         }
-        
-        public string GetLicenseTypeForUser(Guid userId)
+
+        public LicenseType GetLicenseTypeForUser(Guid userId)
         {
             var licenseInfo = _licensesInfoByUser.GetValueOrDefault(userId);
-            if (licenseInfo == null)
-            {
-                return "None";
-            }
-
-            return licenseInfo.IsTrial ? "Trial" : "Paid";
+            return licenseInfo?.Type ?? LicenseType.None;
         }
 
         public async Task<int> GetLicensedUserCountAsync(Guid domainId)

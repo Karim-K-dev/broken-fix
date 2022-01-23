@@ -8,7 +8,7 @@ namespace BrokenCode.Interfaces
 {
     public interface ILicenseService : IDisposable
     {
-        string GetLicenseTypeForUser(Guid userId);
+        LicenseType GetLicenseTypeForUser(Guid userId);
         
         LicenseServiceSettings Settings { get; }
         IReadOnlyDictionary<Guid, LicenseInfo> LicensesInfoByUser { get; }
