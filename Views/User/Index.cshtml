@@ -1,0 +1,47 @@
+@using BrokenCode.Etc
+@model Dictionary<Guid, BrokenCode.Model.User>
+
+@{
+    ViewData["Title"] = "User Page";
+}
+
+<a asp-action="AddUserPage" class="btn btn-secondary">Add User</a>
+<a asp-controller="Report" asp-action="Index" class="btn btn-primary">Show Report</a>
+
+<table class="table table-bordered table-responsive table-hover">
+    <tr>
+        <th>Domain Id</th>
+        <th>Email</th>
+        <th>Name</th>
+        <th>Backup Enabled</th>
+        <th>State</th>
+    </tr>
+    <tbody>
+    @foreach (var (id, user) in Model)
+    {
+        <tr>
+            <td>
+                @user.Id
+            </td>
+            <td>
+                @user.Email
+            </td>
+            <td>
+                @user.UserName
+            </td>
+            <td>
+                @user.BackupEnabled
+            </td>
+            <td>
+                @user.State
+            </td>
+            <td>
+                <form asp-action="DeleteUser">
+                    <input type="hidden" name="userId" value="@id"/>
+                    <button type="submit" class="btn btn-primary">Delete</button>
+                </form>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>

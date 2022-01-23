@@ -1,0 +1,14 @@
+@model BrokenCode.Model.User
+
+@{
+    ViewBag.Title = "title";
+    Layout = "_Layout";
+}
+
+<h2>Adding User</h2>
+<form asp-controller="User" asp-action="AddUser" method="post">
+    @Html.EditorForModel()
+
+    <button type="reset" class="btn btn-secondary">Clear</button>
+    <button type="submit" class="btn btn-primary">Add User</button>
+</form>
