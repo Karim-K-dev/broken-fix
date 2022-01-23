@@ -17,7 +17,7 @@ namespace BrokenCode
     public class ReportService : IReportService
     {
         private const int GetReportTimeOut = 10 * 60;
-        
+
         private readonly UserDbContext _db;
         private readonly ILicenseService _licenseService;
 
@@ -58,7 +58,7 @@ namespace BrokenCode
                 cancelTokenSource.Dispose();
             }
         }
-        
+
         private async Task<IActionResult> GetReportInnerAsync(GetReportRequest request, CancellationToken token)
         {
             var usersOnPage =
@@ -71,30 +71,15 @@ namespace BrokenCode
 
             // TODO: Can move to other request?
             await _licenseService.LogTotalLicensesCountForDomain(request.DomainId);
-            
+
             if (token.IsCancellationRequested)
             {
                 return PartialResult();
             }
 
             var usersData = usersOnPage
-                .Select(u =>
-                {
-                    return new UserStatistics
-                    {
-                        Id = u.Id,
-                        UserName = u.UserEmail,
-                        InBackup = u.BackupEnabled,
-                        EmailLastBackupStatus = u.Email?.LastBackupStatus,
-                        EmailLastBackupDate = u.Email?.LastBackupDate,
-                        DriveLastBackupStatus = u.Drive?.LastBackupStatus,
-                        DriveLastBackupDate = u.Drive?.LastBackupDate,
-                        CalendarLastBackupStatus = u.Calendar?.LastBackupStatus,
-                        CalendarLastBackupDate = u.Calendar?.LastBackupDate,
-                        LicenseType = _licenseService.GetLicenseTypeForUser(u.Id).ToString()
-                    };
-                });
-            
+                .Select(u => new UserStatistics(u, _licenseService.GetLicenseTypeForUser(u.Id)));
+
             if (token.IsCancellationRequested)
             {
                 return PartialResult(usersData);
