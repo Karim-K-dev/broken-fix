@@ -17,8 +17,7 @@ namespace BrokenCode
     public class BrokenService : IBrokenService
     {
         private const int GetReportTimeOut = 10 * 60;
-
-        // TODO: Insert to DI container.
+        
         private readonly UserDbContext _db;
         private readonly ILicenseService _licenseService;
 
@@ -30,7 +29,7 @@ namespace BrokenCode
             _licenseService = licenseService;
         }
 
-        public async Task<IActionResult> GetReport(GetReportRequest request)
+        public async Task<IActionResult> GetReportAsync(GetReportRequest request)
         {
             CancellationTokenSource cancelTokenSource = new CancellationTokenSource();
             CancellationToken token = cancelTokenSource.Token;
@@ -38,7 +37,7 @@ namespace BrokenCode
             var taskTimeOutObserver = new Task(() =>
             {
                 Thread.Sleep(GetReportTimeOut);
-                //cancelTokenSource?.Cancel();
+                cancelTokenSource.Cancel();
             });
 
             var stopWatch = new Stopwatch();
@@ -47,7 +46,7 @@ namespace BrokenCode
                 stopWatch.Start();
                 taskTimeOutObserver.Start();
 
-                return await GetReportAsync(request);
+                return await GetReportInnerAsync(request, token);
             }
             catch
             {
@@ -59,15 +58,24 @@ namespace BrokenCode
                 cancelTokenSource.Dispose();
             }
         }
-
-        // TODO: Split this big method.
-        public async Task<IActionResult> GetReportAsync(GetReportRequest request)
+        
+        private async Task<IActionResult> GetReportInnerAsync(GetReportRequest request, CancellationToken token)
         {
             var usersOnPage =
                 await _db.Users.HaveBackupsInDomainAsync(request.DomainId, request.PageNumber, request.PageSize);
 
+            if (token.IsCancellationRequested)
+            {
+                return PartialResult();
+            }
+
             // TODO: Can move to other request?
             await _licenseService.LogTotalLicensesCountForDomain(request.DomainId);
+            
+            if (token.IsCancellationRequested)
+            {
+                return PartialResult();
+            }
 
             var usersData = usersOnPage
                 .Select(u =>
@@ -86,12 +94,26 @@ namespace BrokenCode
                         LicenseType = _licenseService.GetLicenseTypeForUser(u.Id).ToString()
                     };
                 });
+            
+            if (token.IsCancellationRequested)
+            {
+                return PartialResult(usersData);
+            }
 
             var totalCountUsersHaveBackups = await _db.Users.HaveBackupsInDomainCountAsync(request.DomainId);
             return new OkObjectResult(new
             {
                 TotalCount = totalCountUsersHaveBackups,
                 Data = usersData
+            });
+        }
+
+        private static IActionResult PartialResult(IEnumerable<UserStatistics> data = null, int totalCount = 0)
+        {
+            return new OkObjectResult(new
+            {
+                TotalCount = 0,
+                Data = data ?? new List<UserStatistics>()
             });
         }
     }

@@ -22,7 +22,7 @@ namespace BrokenCode.Controllers
                 throw new ArgumentNullException(nameof(reportRequest));
             }
 
-            return await _brokenService.GetReport(reportRequest);
+            return await _brokenService.GetReportAsync(reportRequest);
         }
     }
 }
