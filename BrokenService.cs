@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using BrokenCode.Etc;
+using BrokenCode.Extensions.DatabaseExtensions;
 using BrokenCode.Interfaces;
 using BrokenCode.Model;
 using log4net;
@@ -37,7 +38,7 @@ namespace BrokenCode
             var taskTimeOutObserver = new Task(() =>
             {
                 Thread.Sleep(GetReportTimeOut);
-                cancelTokenSource.Cancel();
+                //cancelTokenSource?.Cancel();
             });
 
             var stopWatch = new Stopwatch();
@@ -62,7 +63,8 @@ namespace BrokenCode
         // TODO: Split this big method.
         public async Task<IActionResult> GetReportAsync(GetReportRequest request)
         {
-            var usersOnPage = await GetUsersHaveBackupsInDomain(request.DomainId, request.PageNumber, request.PageSize);
+            var usersOnPage =
+                await _db.Users.HaveBackupsInDomainAsync(request.DomainId, request.PageNumber, request.PageSize);
 
             // TODO: Can move to other request?
             await _licenseService.LogTotalLicensesCountForDomain(request.DomainId);
@@ -85,44 +87,12 @@ namespace BrokenCode
                     };
                 });
 
-            var totalCountUsersHaveBackups = await GetTotalUsersHaveBackupsInDomain(request.DomainId);
+            var totalCountUsersHaveBackups = await _db.Users.HaveBackupsInDomainCountAsync(request.DomainId);
             return new OkObjectResult(new
             {
                 TotalCount = totalCountUsersHaveBackups,
                 Data = usersData
             });
-        }
-
-        public async Task<List<User>> GetUsersHaveBackupsInDomain(Guid domainId, int pageNumber = 0, int pageSize = 10)
-        {
-            var request = _db.Users
-                .Where(u => u.DomainId == domainId && u.BackupEnabled && u.State == UserState.InDomain) // Filter users by request.
-                .Skip(pageSize * pageNumber) // Skip users at first.
-                .Take(pageSize);
-
-            return await request.ToListAsync();
-        }
-
-        public async Task<int> GetTotalUsersHaveBackupsInDomain(Guid domainId)
-        {
-            return await _db.Users.CountAsync(u =>
-                u.DomainId == domainId && u.BackupEnabled && u.State == UserState.InDomain);
-        }
-        
-        // TODO: Get _licenseServiceProvider from DI.
-        private void Configure(LicenseServiceSettings settings)
-        {
-            if (settings != null)
-            {
-                settings.TimeOut = 5000;
-            }
-            else
-            {
-                settings = new LicenseServiceSettings
-                {
-                    TimeOut = 5000
-                };
-            }
         }
     }
 }
