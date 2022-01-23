@@ -19,33 +19,33 @@ namespace BrokenCode
 
         // TODO: Insert to DI container.
         private readonly UserDbContext _db;
-        private readonly ILicenseServiceProvider _licenseServiceProvider;
+        private readonly ILicenseService _licenseService;
 
         private static readonly ILog Log = LogManager.GetLogger(typeof(BrokenService));
 
-        public BrokenService(UserDbContext db, ILicenseServiceProvider licenseServiceProvider)
+        public BrokenService(UserDbContext db, ILicenseService licenseService)
         {
             _db = db;
-            _licenseServiceProvider = licenseServiceProvider;
+            _licenseService = licenseService;
         }
 
         public async Task<IActionResult> GetReport(GetReportRequest request)
         {
             CancellationTokenSource cancelTokenSource = new CancellationTokenSource();
             CancellationToken token = cancelTokenSource.Token;
-            
+
             var taskTimeOutObserver = new Task(() =>
             {
                 Thread.Sleep(GetReportTimeOut);
                 cancelTokenSource.Cancel();
             });
-            
+
             var stopWatch = new Stopwatch();
             try
             {
                 stopWatch.Start();
                 taskTimeOutObserver.Start();
-                
+
                 return await GetReportAsync(request);
             }
             catch
@@ -64,20 +64,20 @@ namespace BrokenCode
         {
             var usersOnPage = await GetUsersHaveBackupsInDomain(request.DomainId, request.PageNumber, request.PageSize);
 
+            // получение лицензии для чего-то
             var userLicenses = new Dictionary<Guid, LicenseInfo>();
-            using var licenseService = GetLicenseServiceAndConfigure();
 
-            if (licenseService != null)
+            if (_licenseService != null)
             {
                 Log.Info(
-                    $"Total licenses for domain '{request.DomainId}': {licenseService.GetLicensedUserCountAsync(request.DomainId)}");
+                    $"Total licenses for domain '{request.DomainId}': {_licenseService.GetLicensedUserCountAsync(request.DomainId)}");
 
-                var emails = await usersOnPage.Select(u => u.UserEmail).ToListAsync();
+                var emails = usersOnPage.Select(u => u.UserEmail).ToList();
                 ICollection<LicenseInfo> result = null;
 
                 try
                 {
-                    result = await licenseService.GetLicensesAsync(request.DomainId, emails);
+                    result = await _licenseService.GetLicensesAsync(request.DomainId, emails);
                 }
                 catch (Exception ex)
                 {
@@ -85,6 +85,9 @@ namespace BrokenCode
                     throw;
                 }
 
+                // получение лицензии для чего-то. Конец. Имеем result купленных когда-либо лицензий 
+
+                // добавляем пользователей в список лицензий
                 if (result != null)
                 {
                     foreach (User user in usersOnPage)
@@ -97,7 +100,9 @@ namespace BrokenCode
                 }
             }
 
-            var usersData = (await usersOnPage.ToListAsync())
+            // получаем тип лицензии для пользователя и все вставляем в польщовательскую статистику
+            // нужно упростить пользовательскую статистику
+            var usersData = (usersOnPage.ToList())
                 .Select(u =>
                 {
                     string licenseType = userLicenses.ContainsKey(u.Id)
@@ -150,15 +155,6 @@ namespace BrokenCode
         public bool InBackup(User user)
         {
             return user.BackupEnabled && user.State == UserState.InDomain;
-        }
-
-        public ILicenseService GetLicenseServiceAndConfigure()
-        {
-            using var result = _licenseServiceProvider.GetLicenseService();
-
-            Configure(result.Settings);
-
-            return result;
         }
 
         // TODO: Get _licenseServiceProvider from DI.

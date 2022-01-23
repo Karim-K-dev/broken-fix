@@ -11,6 +11,5 @@ namespace BrokenCode
         Task<IActionResult> GetReport(GetReportRequest request);
         Task<IActionResult> GetReportAsync(GetReportRequest request);
         bool InBackup(User user);
-        ILicenseService GetLicenseServiceAndConfigure();
     }
 }
