@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using BrokenCode.Etc;
+using BrokenCode.Model;
+using log4net;
 using Microsoft.Extensions.Options;
 
 namespace BrokenCode.Interfaces
@@ -10,24 +13,35 @@ namespace BrokenCode.Interfaces
     {
         public LicenseServiceSettings Settings { get; }
 
+        // TODO: Use dictionary this for improve access performance (there can be a lot of info about licenses)
+        private readonly List<LicenseInfo> _licensesInfo = new List<LicenseInfo>();
+        
+        private static readonly ILog Log = LogManager.GetLogger(typeof(LicenseService));
+
         public LicenseService(IOptions<LicenseServiceSettings> licenseServiceSettingsOptions)
         {
             Settings = licenseServiceSettingsOptions.Value;
         }
-
-        public Task<ICollection<LicenseInfo>> GetLicensesAsync(Guid domainId, ICollection<string> emails)
+        
+        public async Task<IDictionary<Guid, LicenseInfo>> GetUserLicensesAsync(ICollection<User> users)
         {
-            throw new NotImplementedException();
+            // TODO: Select by users.
+            return new Dictionary<Guid, LicenseInfo>();
         }
 
-        public Task<int> GetLicensedUserCountAsync(Guid domainId)
+        public async Task<int> GetLicensedUserCountAsync(Guid domainId)
         {
-            throw new NotImplementedException();
+            // TODO: Select  domainId only.
+            return _licensesInfo.Count;
+        }
+        
+        public async Task LogTotalLicensesCountForDomain(Guid domainId)
+        {
+            Log.Info($"Total licenses for domain '{domainId}': {await GetLicensedUserCountAsync(domainId)}");
         }
 
         public void Dispose()
         {
-            throw new NotImplementedException();
         }
     }
 }

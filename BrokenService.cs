@@ -64,33 +64,10 @@ namespace BrokenCode
         {
             var usersOnPage = await GetUsersHaveBackupsInDomain(request.DomainId, request.PageNumber, request.PageSize);
 
-            // получение лицензии для чего-то
-            var userLicenses = new Dictionary<Guid, LicenseInfo>();
-
-            if (_licenseService != null)
-            {
-                Log.Info(
-                    $"Total licenses for domain '{request.DomainId}': {_licenseService.GetLicensedUserCountAsync(request.DomainId)}");
-
-                var emails = usersOnPage.Select(u => u.UserEmail).ToList();
-                ICollection<LicenseInfo> result = null;
-
-                result = await _licenseService.GetLicensesAsync(request.DomainId, emails);
-
-                // получение лицензии для чего-то. Конец. Имеем result купленных когда-либо лицензий 
-
-                // добавляем пользователей в список лицензий
-                if (result != null)
-                {
-                    foreach (User user in usersOnPage)
-                    {
-                        if (result.Count(r => r.Email == user.UserEmail) > 0)
-                        {
-                            userLicenses.Add(user.Id, result.Where(r => r.Email == user.UserEmail).First());
-                        }
-                    }
-                }
-            }
+            // TODO: Can move to other request?
+            await _licenseService.LogTotalLicensesCountForDomain(request.DomainId);
+            
+            var userLicenses = await _licenseService.GetUserLicensesAsync(usersOnPage);
 
             // получаем тип лицензии для пользователя и все вставляем в польщовательскую статистику
             // нужно упростить пользовательскую статистику
